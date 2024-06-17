@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./db.db"
+}
+
+model User {
+  id               Int            @id @default(autoincrement()) 
+  email            String         @unique
+  name             String
+  password         String         @default("")
+  profilePicture   String         @default("")
+  about            String         @default("")
+  role             Role           @relation(fields: [roleId], references: [id])
+  roleId           Int
+  sentMessages     Messages[]     @relation("sentMessages")
+  recievedMessages Messages[]     @relation("recievedMessages")
+  blockedBy        UserBlock[]    @relation("blockedByUser")
+  blockedUsers     UserBlock[]    @relation("blockedUsers")
+  reportsMade      UserReport[]   @relation("reportsMade")
+  reportsReceived  UserReport[]   @relation("reportsReceived")
+  blockByAdmin     BlockedUser?
+}
+
+model Messages {
+  id              Int           @id @default(autoincrement())
+  sender          User          @relation("sentMessages", fields: [senderId], references: [id])
+  senderId        Int
+  reciever        User          @relation("recievedMessages", fields: [recieverId], references: [id])
+  recieverId      Int
+  message         String
+  createdAt       DateTime      @default(now())
+  messageType     MessageType   @relation("messageType", fields: [messageTypeId], references: [id])
+  messageTypeId   Int
+  messageStatus   MessageStatus @relation("messageStatus", fields: [messageStatusId], references: [id])
+  messageStatusId Int
+  deleteByReciever Boolean      @default(false)
+}
+
+model MessageType {
+  id       Int        @id @default(autoincrement())
+  type     String 
+  messages Messages[] @relation("messageType")
+}
+
+model MessageStatus {
+  id       Int        @id @default(autoincrement())
+  status   String
+  messages Messages[] @relation("messageStatus")
+}
+
+model UserBlock {
+  id             Int      @id @default(autoincrement())
+  blockedBy      User     @relation("blockedByUser", fields: [blockedById], references: [id])
+  blockedById    Int
+  blockedUser    User     @relation("blockedUsers", fields: [blockedUserId], references: [id])
+  blockedUserId  Int
+  createdAt      DateTime @default(now())
+}
+
+model Role {
+  id      Int       @id @default(autoincrement())
+  name    String    @unique
+  users   User[]    
+}
+
+model UserReport {
+  id              Int      @id @default(autoincrement())
+  reportReason    String
+  reportedBy      User     @relation("reportsMade", fields: [reportedById], references: [id])
+  reportedById    Int
+  reportedUser    User     @relation("reportsReceived", fields: [reportedUserId], references: [id])
+  reportedUserId  Int
+  createdAt       DateTime @default(now())
+}
+
+model BlockedUser {
+  id              Int      @id @default(autoincrement())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          Int      @unique
+  blockedAt       DateTime @default(now())
+  blockReason     String
+  // blockExpiresAt  DateTime?
+  // isPermanent     Boolean  @default(false)
+}
